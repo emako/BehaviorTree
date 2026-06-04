@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net35</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <RootNamespace>tests</RootNamespace>
+        <AssemblyName>tests</AssemblyName>
+        <IsPackable>false</IsPackable>
+        <AssemblyTitle>tests</AssemblyTitle>
+        <Copyright>Copyright © 2015-2026</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Moq" Version="4.2.1507.0118" />
+        <PackageReference Include="xunit" Version="1.9.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\src\BehaviorTree.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net35</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <RootNamespace>BehaviorTree</RootNamespace>
+        <AssemblyName>BehaviorTree</AssemblyName>
+        <Product>BehaviorTree</Product>
+        <AssemblyTitle>BehaviorTree</AssemblyTitle>
+        <Title>BehaviorTree</Title>
+        <PackageId>BehaviorTree</PackageId>
+        <Authors>ema</Authors>
+        <Copyright>Copyright © 2015-2026</Copyright>
+        <Version>0.0.4</Version>
+        <AssemblyVersion>0.0.4.0</AssemblyVersion>
+        <FileVersion>0.0.4.0</FileVersion>
+        <Description>C# behavior tree library with a fluent API</Description>
+        <PackageProjectUrl>https://github.com/codecapers/Fluent-Behavior-Tree</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/codecapers/Fluent-Behavior-Tree</PackageLicenseUrl>
+        <PackageTags>C# fluent api behavior behaviour tree</PackageTags>
+    </PropertyGroup>
+
+</Project>

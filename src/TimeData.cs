@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿namespace BehaviorTree;
 
-namespace FluentBehaviourTree
+/// <summary>
+/// Represents time. Used to pass time values to behavior tree nodes.
+/// </summary>
+public readonly struct TimeData(float deltaTime)
 {
-    /// <summary>
-    /// Represents time. Used to pass time values to behaviour tree nodes.
-    /// </summary>
-    public struct TimeData
-    {
-        public TimeData(float deltaTime)
-        {
-            this.deltaTime = deltaTime;
-        }
-
-        public float deltaTime;
-    }
+    public readonly float DeltaTime = deltaTime;
 }

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../tests/BehaviorTree.Tests.csproj" />
+  <Project Path="BehaviorTree.csproj" />
+</Solution>

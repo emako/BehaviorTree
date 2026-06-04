@@ -1,63 +1,59 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace FluentBehaviourTree
+namespace BehaviorTree;
+
+/// <summary>
+/// Decorator node that inverts the success/failure of its child.
+/// </summary>
+public class InverterNode : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// Decorator node that inverts the success/failure of its child.
+    /// Name of the node.
     /// </summary>
-    public class InverterNode : IParentBehaviourTreeNode
+    private string name;
+
+    /// <summary>
+    /// The child to be inverted.
+    /// </summary>
+    private IBehaviorTreeNode childNode;
+
+    public InverterNode(string name)
     {
-        /// <summary>
-        /// Name of the node.
-        /// </summary>
-        private string name;
+        this.name = name;
+    }
 
-        /// <summary>
-        /// The child to be inverted.
-        /// </summary>
-        private IBehaviourTreeNode childNode;
-
-        public InverterNode(string name)
+    public BehaviorTreeStatus Tick(TimeData time)
+    {
+        if (childNode == null)
         {
-            this.name = name;
+            throw new ApplicationException("InverterNode must have a child node!");
         }
 
-        public BehaviourTreeStatus Tick(TimeData time)
+        var result = childNode.Tick(time);
+        if (result == BehaviorTreeStatus.Failure)
         {
-            if (childNode == null)
-            {
-                throw new ApplicationException("InverterNode must have a child node!");
-            }
+            return BehaviorTreeStatus.Success;
+        }
+        else if (result == BehaviorTreeStatus.Success)
+        {
+            return BehaviorTreeStatus.Failure;
+        }
+        else
+        {
+            return result;
+        }
+    }
 
-            var result = childNode.Tick(time);
-            if (result == BehaviourTreeStatus.Failure)
-            {
-                return BehaviourTreeStatus.Success;
-            }
-            else if (result == BehaviourTreeStatus.Success)
-            {
-                return BehaviourTreeStatus.Failure;
-            }
-            else
-            {
-                return result;
-            }
+    /// <summary>
+    /// Add a child to the parent node.
+    /// </summary>
+    public void AddChild(IBehaviorTreeNode child)
+    {
+        if (childNode != null)
+        {
+            throw new ApplicationException("Can't add more than a single child to InverterNode!");
         }
 
-        /// <summary>
-        /// Add a child to the parent node.
-        /// </summary>
-        public void AddChild(IBehaviourTreeNode child)
-        {
-            if (this.childNode != null)
-            {
-                throw new ApplicationException("Can't add more than a single child to InverterNode!");
-            }
-
-            this.childNode = child;
-        }
+        childNode = child;
     }
 }

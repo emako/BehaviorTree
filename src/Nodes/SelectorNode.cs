@@ -1,50 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace FluentBehaviourTree
+namespace BehaviorTree;
+
+/// <summary>
+/// Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
+/// </summary>
+public class SelectorNode : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
+    /// The name of the node.
     /// </summary>
-    public class SelectorNode : IParentBehaviourTreeNode
+    private string name;
+
+    /// <summary>
+    /// List of child nodes.
+    /// </summary>
+    private List<IBehaviorTreeNode> children = new List<IBehaviorTreeNode>(); //todo: optimization, bake this to an array.
+
+    public SelectorNode(string name)
     {
-        /// <summary>
-        /// The name of the node.
-        /// </summary>
-        private string name;
+        this.name = name;
+    }
 
-        /// <summary>
-        /// List of child nodes.
-        /// </summary>
-        private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>(); //todo: optimization, bake this to an array.
-
-        public SelectorNode(string name)
+    public BehaviorTreeStatus Tick(TimeData time)
+    {
+        foreach (var child in children)
         {
-            this.name = name;
-        }
-
-        public BehaviourTreeStatus Tick(TimeData time)
-        {
-            foreach (var child in children)
+            var childStatus = child.Tick(time);
+            if (childStatus != BehaviorTreeStatus.Failure)
             {
-                var childStatus = child.Tick(time);
-                if (childStatus != BehaviourTreeStatus.Failure)
-                {
-                    return childStatus;
-                }
+                return childStatus;
             }
-
-            return BehaviourTreeStatus.Failure;
         }
 
-        /// <summary>
-        /// Add a child node to the selector.
-        /// </summary>
-        public void AddChild(IBehaviourTreeNode child)
-        {
-            children.Add(child);
-        }
+        return BehaviorTreeStatus.Failure;
+    }
+
+    /// <summary>
+    /// Add a child node to the selector.
+    /// </summary>
+    public void AddChild(IBehaviorTreeNode child)
+    {
+        children.Add(child);
     }
 }

@@ -1,35 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace FluentBehaviourTree
+namespace BehaviorTree;
+
+/// <summary>
+/// A behavior tree leaf node for running an action.
+/// </summary>
+public class ActionNode : IBehaviorTreeNode
 {
     /// <summary>
-    /// A behaviour tree leaf node for running an action.
+    /// The name of the node.
     /// </summary>
-    public class ActionNode : IBehaviourTreeNode
+    private string name;
+
+    /// <summary>
+    /// Function to invoke for the action.
+    /// </summary>
+    private Func<TimeData, BehaviorTreeStatus> fn;
+
+    public ActionNode(string name, Func<TimeData, BehaviorTreeStatus> fn)
     {
-        /// <summary>
-        /// The name of the node.
-        /// </summary>
-        private string name;
+        this.name = name;
+        this.fn = fn;
+    }
 
-        /// <summary>
-        /// Function to invoke for the action.
-        /// </summary>
-        private Func<TimeData, BehaviourTreeStatus> fn;
-        
-
-        public ActionNode(string name, Func<TimeData, BehaviourTreeStatus> fn)
-        {
-            this.name=name;
-            this.fn=fn;
-        }
-
-        public BehaviourTreeStatus Tick(TimeData time)
-        {
-            return fn(time);
-        }
+    public BehaviorTreeStatus Tick(TimeData time)
+    {
+        return fn(time);
     }
 }

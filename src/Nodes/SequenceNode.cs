@@ -1,50 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace FluentBehaviourTree
+namespace BehaviorTree;
+
+/// <summary>
+/// Runs child nodes in sequence, until one fails.
+/// </summary>
+public class SequenceNode(string name) : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// Runs child nodes in sequence, until one fails.
+    /// Name of the node.
     /// </summary>
-    public class SequenceNode : IParentBehaviourTreeNode
+    private string name = name;
+
+    /// <summary>
+    /// List of child nodes.
+    /// </summary>
+    private List<IBehaviorTreeNode> children = []; //todo: this could be optimized as a baked array.
+
+    public BehaviorTreeStatus Tick(TimeData time)
     {
-        /// <summary>
-        /// Name of the node.
-        /// </summary>
-        private string name;
-
-        /// <summary>
-        /// List of child nodes.
-        /// </summary>
-        private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>(); //todo: this could be optimized as a baked array.
-
-        public SequenceNode(string name)
+        foreach (var child in children)
         {
-            this.name = name;
-        }
-
-        public BehaviourTreeStatus Tick(TimeData time)
-        {
-            foreach (var child in children)
+            var childStatus = child.Tick(time);
+            if (childStatus != BehaviorTreeStatus.Success)
             {
-                var childStatus = child.Tick(time);
-                if (childStatus != BehaviourTreeStatus.Success)
-                {
-                    return childStatus;
-                }
+                return childStatus;
             }
-
-            return BehaviourTreeStatus.Success;
         }
 
-        /// <summary>
-        /// Add a child to the sequence.
-        /// </summary>
-        public void AddChild(IBehaviourTreeNode child)
-        {
-            children.Add(child);
-        }
+        return BehaviorTreeStatus.Success;
+    }
+
+    /// <summary>
+    /// Add a child to the sequence.
+    /// </summary>
+    public void AddChild(IBehaviorTreeNode child)
+    {
+        children.Add(child);
     }
 }

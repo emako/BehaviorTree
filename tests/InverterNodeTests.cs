@@ -1,103 +1,95 @@
-﻿using FluentBehaviourTree;
+﻿using BehaviorTree;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xunit;
 
-namespace tests
+public class InverterNodeTests
 {
-    public class InverterNodeTests
+    private InverterNode testObject;
+
+    void Init()
     {
-        InverterNode testObject;
+        testObject = new InverterNode("some-node");
+    }
 
-        void Init()
-        {
-            testObject = new InverterNode("some-node");
-        }
+    [Fact]
+    public void ticking_with_no_child_node_throws_exception()
+    {
+        Init();
 
-        [Fact]
-        public void ticking_with_no_child_node_throws_exception()
-        {
-            Init();
+        Assert.Throws<ApplicationException>(
+            () => testObject.Tick(new TimeData())
+        );
+    }
 
-            Assert.Throws<ApplicationException>(
-                () => testObject.Tick(new TimeData())
-            );
-        }
+    [Fact]
+    public void inverts_success_of_child_node()
+    {
+        Init();
 
-        [Fact]
-        public void inverts_success_of_child_node()
-        {
-            Init();
+        var time = new TimeData();
 
-            var time = new TimeData();
+        var mockChildNode = new Mock<IBehaviorTreeNode>();
+        mockChildNode
+            .Setup(m => m.Tick(time))
+            .Returns(BehaviorTreeStatus.Success);
 
-            var mockChildNode = new Mock<IBehaviourTreeNode>();
-            mockChildNode
-                .Setup(m => m.Tick(time))
-                .Returns(BehaviourTreeStatus.Success);
+        testObject.AddChild(mockChildNode.Object);
 
-            testObject.AddChild(mockChildNode.Object);
+        Assert.Equal(BehaviorTreeStatus.Failure, testObject.Tick(time));
 
-            Assert.Equal(BehaviourTreeStatus.Failure, testObject.Tick(time));
+        mockChildNode.Verify(m => m.Tick(time), Times.Once());
+    }
 
-            mockChildNode.Verify(m => m.Tick(time), Times.Once());
-        }
+    [Fact]
+    public void inverts_failure_of_child_node()
+    {
+        Init();
 
-        [Fact]
-        public void inverts_failure_of_child_node()
-        {
-            Init();
+        var time = new TimeData();
 
-            var time = new TimeData();
+        var mockChildNode = new Mock<IBehaviorTreeNode>();
+        mockChildNode
+            .Setup(m => m.Tick(time))
+            .Returns(BehaviorTreeStatus.Failure);
 
-            var mockChildNode = new Mock<IBehaviourTreeNode>();
-            mockChildNode
-                .Setup(m => m.Tick(time))
-                .Returns(BehaviourTreeStatus.Failure);
+        testObject.AddChild(mockChildNode.Object);
 
-            testObject.AddChild(mockChildNode.Object);
+        Assert.Equal(BehaviorTreeStatus.Success, testObject.Tick(time));
 
-            Assert.Equal(BehaviourTreeStatus.Success, testObject.Tick(time));
+        mockChildNode.Verify(m => m.Tick(time), Times.Once());
+    }
 
-            mockChildNode.Verify(m => m.Tick(time), Times.Once());
-        }
+    [Fact]
+    public void pass_through_running_of_child_node()
+    {
+        Init();
 
-        [Fact]
-        public void pass_through_running_of_child_node()
-        {
-            Init();
+        var time = new TimeData();
 
-            var time = new TimeData();
+        var mockChildNode = new Mock<IBehaviorTreeNode>();
+        mockChildNode
+            .Setup(m => m.Tick(time))
+            .Returns(BehaviorTreeStatus.Running);
 
-            var mockChildNode = new Mock<IBehaviourTreeNode>();
-            mockChildNode
-                .Setup(m => m.Tick(time))
-                .Returns(BehaviourTreeStatus.Running);
+        testObject.AddChild(mockChildNode.Object);
 
-            testObject.AddChild(mockChildNode.Object);
+        Assert.Equal(BehaviorTreeStatus.Running, testObject.Tick(time));
 
-            Assert.Equal(BehaviourTreeStatus.Running, testObject.Tick(time));
+        mockChildNode.Verify(m => m.Tick(time), Times.Once());
+    }
 
-            mockChildNode.Verify(m => m.Tick(time), Times.Once());
-        }
+    [Fact]
+    public void adding_more_than_a_single_child_throws_exception()
+    {
+        Init();
 
-        [Fact]
-        public void adding_more_than_a_single_child_throws_exception()
-        {
-            Init();
+        var mockChildNode1 = new Mock<IBehaviorTreeNode>();
+        testObject.AddChild(mockChildNode1.Object);
 
-            var mockChildNode1 = new Mock<IBehaviourTreeNode>();
-            testObject.AddChild(mockChildNode1.Object);
-
-            var mockChildNode2 = new Mock<IBehaviourTreeNode>();
-            Assert.Throws<ApplicationException>(() => 
-                testObject.AddChild(mockChildNode2.Object)
-            );
-        }
-
-
+        var mockChildNode2 = new Mock<IBehaviorTreeNode>();
+        Assert.Throws<ApplicationException>(() =>
+            testObject.AddChild(mockChildNode2.Object)
+        );
     }
 }
