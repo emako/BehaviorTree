@@ -7,30 +7,35 @@ using System.Threading.Tasks;
 namespace BehaviorTree;
 
 /// <summary>
-/// Runs childs nodes in parallel.
+/// A composite node that ticks every child each frame and terminates when enough
+/// children succeed or fail.
 /// </summary>
-/// <param name="name">
-/// Name of the node.
-/// </param>
-/// <param name="numRequiredToFail">
-/// Number of child failures required to terminate with failure.
-/// </param>
-/// <param name="numRequiredToSucceed">
-/// Number of child successess require to terminate with success.
-/// </param>
+/// <param name="name">The display name of the parallel node.</param>
+/// <param name="numRequiredToFail">Number of child failures required to terminate with failure.</param>
+/// <param name="numRequiredToSucceed">Number of child successes required to terminate with success.</param>
 public class ParallelNode(string name, int numRequiredToFail, int numRequiredToSucceed) : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// List of child nodes.
+    /// Child nodes ticked in parallel each frame.
     /// </summary>
     protected readonly List<IBehaviorTreeNode> children = [];
 
+    /// <summary>
+    /// The display name of the node.
+    /// </summary>
     public string Name { get; } = name;
 
+    /// <summary>
+    /// Number of child failures required to terminate with failure.
+    /// </summary>
     public int NumRequiredToFail { get; } = numRequiredToFail;
 
+    /// <summary>
+    /// Number of child successes required to terminate with success.
+    /// </summary>
     public int NumRequiredToSucceed { get; } = numRequiredToSucceed;
 
+    /// <inheritdoc />
     public BehaviorTreeStatus Tick(TimeData time)
     {
         var numChildrenSuceeded = 0;
@@ -60,6 +65,7 @@ public class ParallelNode(string name, int numRequiredToFail, int numRequiredToS
     }
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    /// <inheritdoc />
     public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
     {
         var numChildrenSuceeded = 0;
@@ -89,6 +95,7 @@ public class ParallelNode(string name, int numRequiredToFail, int numRequiredToS
     }
 #endif
 
+    /// <inheritdoc />
     public void AddChild(IBehaviorTreeNode child)
     {
         children.Add(child);

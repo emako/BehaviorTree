@@ -1,12 +1,13 @@
 ﻿namespace BehaviorTree;
 
 /// <summary>
-/// Interface for behavior tree nodes.
+/// A behavior tree node that owns one or more child nodes.
 /// </summary>
 public interface IParentBehaviorTreeNode : IBehaviorTreeNode
 {
     /// <summary>
-    /// Add a child to the parent node.
+    /// Adds a child node to this parent.
     /// </summary>
+    /// <param name="child">The child node to add.</param>
     public void AddChild(IBehaviorTreeNode child);
 }

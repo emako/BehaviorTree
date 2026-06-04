@@ -7,20 +7,22 @@ using System.Threading.Tasks;
 namespace BehaviorTree;
 
 /// <summary>
-/// Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
+/// A composite node that tries children in order until one succeeds or is running.
 /// </summary>
-/// <param name="name">
-/// The name of the node.
-/// </param>
+/// <param name="name">The display name of the selector node.</param>
 public class SelectorNode(string name) : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// List of child nodes.
+    /// Child nodes tried in order.
     /// </summary>
     protected readonly List<IBehaviorTreeNode> children = []; //todo: optimization, bake this to an array.
 
+    /// <summary>
+    /// The display name of the node.
+    /// </summary>
     public string Name { get; } = name;
 
+    /// <inheritdoc />
     public BehaviorTreeStatus Tick(TimeData time)
     {
         foreach (var child in children)
@@ -36,6 +38,7 @@ public class SelectorNode(string name) : IParentBehaviorTreeNode
     }
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    /// <inheritdoc />
     public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
     {
         foreach (var child in children)
@@ -51,9 +54,7 @@ public class SelectorNode(string name) : IParentBehaviorTreeNode
     }
 #endif
 
-    /// <summary>
-    /// Add a child node to the selector.
-    /// </summary>
+    /// <inheritdoc />
     public void AddChild(IBehaviorTreeNode child)
     {
         children.Add(child);

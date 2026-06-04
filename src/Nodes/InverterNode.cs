@@ -7,20 +7,23 @@ using System.Threading.Tasks;
 namespace BehaviorTree;
 
 /// <summary>
-/// Decorator node that inverts the success/failure of its child.
+/// A decorator node that inverts the success and failure of its single child.
 /// </summary>
-/// <param name="name">
-/// Name of the node.
-/// </param>
+/// <param name="name">The display name of the inverter node.</param>
 public class InverterNode(string name) : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// The child to be inverted.
+    /// The single child whose result is inverted.
     /// </summary>
     private IBehaviorTreeNode childNode;
 
+    /// <summary>
+    /// The display name of the node.
+    /// </summary>
     public string Name { get; } = name;
 
+    /// <inheritdoc />
+    /// <exception cref="ApplicationException">Thrown when the inverter has no child node.</exception>
     public BehaviorTreeStatus Tick(TimeData time)
     {
         if (childNode == null)
@@ -32,6 +35,8 @@ public class InverterNode(string name) : IParentBehaviorTreeNode
     }
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    /// <inheritdoc />
+    /// <exception cref="ApplicationException">Thrown when the inverter has no child node.</exception>
     public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
     {
         if (childNode == null)
@@ -43,9 +48,8 @@ public class InverterNode(string name) : IParentBehaviorTreeNode
     }
 #endif
 
-    /// <summary>
-    /// Add a child to the parent node.
-    /// </summary>
+    /// <inheritdoc />
+    /// <exception cref="ApplicationException">Thrown when a second child is added.</exception>
     public void AddChild(IBehaviorTreeNode child)
     {
         if (childNode != null)
@@ -56,6 +60,11 @@ public class InverterNode(string name) : IParentBehaviorTreeNode
         childNode = child;
     }
 
+    /// <summary>
+    /// Swaps success and failure while leaving <see cref="BehaviorTreeStatus.Running"/> unchanged.
+    /// </summary>
+    /// <param name="result">The child status to invert.</param>
+    /// <returns>The inverted status.</returns>
     private static BehaviorTreeStatus Invert(BehaviorTreeStatus result)
     {
         if (result == BehaviorTreeStatus.Failure)

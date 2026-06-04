@@ -8,23 +8,27 @@ using System.Threading.Tasks;
 namespace BehaviorTree;
 
 /// <summary>
-/// Fluent API for building a behavior tree.
+/// Fluent API for constructing behavior trees.
 /// </summary>
 public class BehaviorTreeBuilder
 {
     /// <summary>
-    /// Last node created.
+    /// The root node produced by the most recent <see cref="End"/> call.
     /// </summary>
     private IBehaviorTreeNode curNode = null;
 
     /// <summary>
-    /// Stack node nodes that we are build via the fluent API.
+    /// Parent nodes currently open in the fluent build sequence.
     /// </summary>
     private readonly Stack<IParentBehaviorTreeNode> parentNodeStack = new();
 
     /// <summary>
-    /// Create an action node.
+    /// Creates a synchronous leaf action node.
     /// </summary>
+    /// <param name="name">The display name of the action.</param>
+    /// <param name="fn">The action invoked on each tick.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
+    /// <exception cref="ApplicationException">Thrown when the action is not nested inside a parent node.</exception>
     public BehaviorTreeBuilder Do(string name, Func<TimeData, BehaviorTreeStatus> fn)
     {
         if (parentNodeStack.Count <= 0)
@@ -39,8 +43,12 @@ public class BehaviorTreeBuilder
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
     /// <summary>
-    /// Create an action node that returns a task.
+    /// Creates a leaf action node backed by a <see cref="Task{TResult}"/>.
     /// </summary>
+    /// <param name="name">The display name of the action.</param>
+    /// <param name="fn">The action invoked on the first tick; subsequent ticks wait for completion.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
+    /// <exception cref="ApplicationException">Thrown when the action is not nested inside a parent node.</exception>
     public BehaviorTreeBuilder Do(string name, Func<TimeData, Task<BehaviorTreeStatus>> fn)
     {
         if (parentNodeStack.Count <= 0)
@@ -56,8 +64,12 @@ public class BehaviorTreeBuilder
 
 #if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
     /// <summary>
-    /// Create an action node that returns a value task.
+    /// Creates a leaf action node backed by a <see cref="ValueTask{TResult}"/>.
     /// </summary>
+    /// <param name="name">The display name of the action.</param>
+    /// <param name="fn">The action invoked on the first tick; subsequent ticks wait for completion.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
+    /// <exception cref="ApplicationException">Thrown when the action is not nested inside a parent node.</exception>
     public BehaviorTreeBuilder DoValue(string name, Func<TimeData, ValueTask<BehaviorTreeStatus>> fn)
     {
         if (parentNodeStack.Count <= 0)
@@ -72,8 +84,13 @@ public class BehaviorTreeBuilder
 #endif
 
     /// <summary>
-    /// Like an action node... but the function can return true/false and is mapped to success/failure.
+    /// Creates a synchronous condition node that maps <see langword="true"/> to
+    /// <see cref="BehaviorTreeStatus.Success"/> and <see langword="false"/> to
+    /// <see cref="BehaviorTreeStatus.Failure"/>.
     /// </summary>
+    /// <param name="name">The display name of the condition.</param>
+    /// <param name="fn">The predicate evaluated on each tick.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Condition(string name, Func<TimeData, bool> fn)
     {
         return Do(name, t => fn(t) ? BehaviorTreeStatus.Success : BehaviorTreeStatus.Failure);
@@ -81,8 +98,12 @@ public class BehaviorTreeBuilder
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
     /// <summary>
-    /// Like a condition node, but the predicate returns a task of bool.
+    /// Creates an asynchronous condition node backed by a <see cref="Task{TResult}"/> of
+    /// <see cref="bool"/>.
     /// </summary>
+    /// <param name="name">The display name of the condition.</param>
+    /// <param name="fn">The predicate evaluated on each tick.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Condition(string name, Func<TimeData, Task<bool>> fn)
     {
         async Task<BehaviorTreeStatus> Action(TimeData t)
@@ -97,8 +118,12 @@ public class BehaviorTreeBuilder
 
 #if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
     /// <summary>
-    /// Like a condition node, but the predicate returns a value task of bool.
+    /// Creates an asynchronous condition node backed by a <see cref="ValueTask{TResult}"/> of
+    /// <see cref="bool"/>.
     /// </summary>
+    /// <param name="name">The display name of the condition.</param>
+    /// <param name="fn">The predicate evaluated on each tick.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Condition(string name, Func<TimeData, ValueTask<bool>> fn)
     {
         async ValueTask<BehaviorTreeStatus> Action(TimeData t)
@@ -112,8 +137,10 @@ public class BehaviorTreeBuilder
 #endif
 
     /// <summary>
-    /// Create an inverter node that inverts the success/failure of its children.
+    /// Opens an inverter decorator that swaps success and failure of its single child.
     /// </summary>
+    /// <param name="name">The display name of the inverter node.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Inverter(string name)
     {
         var inverterNode = new InverterNode(name);
@@ -128,8 +155,10 @@ public class BehaviorTreeBuilder
     }
 
     /// <summary>
-    /// Create a sequence node.
+    /// Opens a sequence composite that runs children in order until one fails or is running.
     /// </summary>
+    /// <param name="name">The display name of the sequence node.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Sequence(string name)
     {
         var sequenceNode = new SequenceNode(name);
@@ -144,8 +173,12 @@ public class BehaviorTreeBuilder
     }
 
     /// <summary>
-    /// Create a parallel node.
+    /// Opens a parallel composite that ticks every child each frame.
     /// </summary>
+    /// <param name="name">The display name of the parallel node.</param>
+    /// <param name="numRequiredToFail">Number of child failures required to terminate with failure.</param>
+    /// <param name="numRequiredToSucceed">Number of child successes required to terminate with success.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Parallel(string name, int numRequiredToFail, int numRequiredToSucceed)
     {
         var parallelNode = new ParallelNode(name, numRequiredToFail, numRequiredToSucceed);
@@ -160,8 +193,10 @@ public class BehaviorTreeBuilder
     }
 
     /// <summary>
-    /// Create a selector node.
+    /// Opens a selector composite that tries children in order until one succeeds or is running.
     /// </summary>
+    /// <param name="name">The display name of the selector node.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
     public BehaviorTreeBuilder Selector(string name)
     {
         var selectorNode = new SelectorNode(name);
@@ -176,8 +211,12 @@ public class BehaviorTreeBuilder
     }
 
     /// <summary>
-    /// Splice a sub tree into the parent tree.
+    /// Attaches a pre-built sub-tree as a child of the current parent node.
     /// </summary>
+    /// <param name="subTree">The sub-tree to attach.</param>
+    /// <returns>This builder instance for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="subTree"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ApplicationException">Thrown when there is no open parent node.</exception>
     public BehaviorTreeBuilder Splice(IBehaviorTreeNode subTree)
     {
         _ = subTree ?? throw new ArgumentNullException(nameof(subTree));
@@ -191,8 +230,10 @@ public class BehaviorTreeBuilder
     }
 
     /// <summary>
-    /// Build the actual tree.
+    /// Returns the completed behavior tree.
     /// </summary>
+    /// <returns>The root node of the built tree.</returns>
+    /// <exception cref="ApplicationException">Thrown when no nodes have been created.</exception>
     public IBehaviorTreeNode Build()
     {
         if (curNode == null)
@@ -203,8 +244,10 @@ public class BehaviorTreeBuilder
     }
 
     /// <summary>
-    /// Ends a sequence of children.
+    /// Closes the most recently opened composite node and continues building at its parent.
     /// </summary>
+    /// <returns>This builder instance for fluent chaining.</returns>
+    /// <exception cref="ApplicationException">Thrown when the builder stack is empty.</exception>
     public BehaviorTreeBuilder End()
     {
         curNode = parentNodeStack.Pop();

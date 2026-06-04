@@ -7,20 +7,22 @@ using System.Threading.Tasks;
 namespace BehaviorTree;
 
 /// <summary>
-/// Runs child nodes in sequence, until one fails.
+/// A composite node that runs children in order until one fails or is running.
 /// </summary>
+/// <param name="name">The display name of the sequence node.</param>
 public class SequenceNode(string name) : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// List of child nodes.
+    /// Child nodes executed in order.
     /// </summary>
     protected readonly List<IBehaviorTreeNode> children = []; //todo: this could be optimized as a baked array.
 
     /// <summary>
-    /// Name of the node.
+    /// The display name of the node.
     /// </summary>
     public string Name { get; } = name;
 
+    /// <inheritdoc />
     public BehaviorTreeStatus Tick(TimeData time)
     {
         foreach (var child in children)
@@ -36,6 +38,7 @@ public class SequenceNode(string name) : IParentBehaviorTreeNode
     }
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    /// <inheritdoc />
     public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
     {
         foreach (var child in children)
@@ -51,9 +54,7 @@ public class SequenceNode(string name) : IParentBehaviorTreeNode
     }
 #endif
 
-    /// <summary>
-    /// Add a child to the sequence.
-    /// </summary>
+    /// <inheritdoc />
     public void AddChild(IBehaviorTreeNode child)
     {
         children.Add(child);
