@@ -1,4 +1,5 @@
 ﻿using System;
+
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
 using System.Threading.Tasks;
 #endif
@@ -13,52 +14,52 @@ public class ActionNode : IBehaviorTreeNode
     /// <summary>
     /// The name of the node.
     /// </summary>
-    private string name;
+    public string Name { get; }
 
     /// <summary>
     /// Function to invoke for the action.
     /// </summary>
-    private Func<TimeData, BehaviorTreeStatus> syncFn;
+    protected readonly Func<TimeData, BehaviorTreeStatus> syncFn;
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
     /// <summary>
     /// Async function to invoke for the action.
     /// </summary>
-    private Func<TimeData, Task<BehaviorTreeStatus>> taskFn;
+    protected readonly Func<TimeData, Task<BehaviorTreeStatus>> taskFn;
 
     /// <summary>
     /// Pending task started by the previous tick.
     /// </summary>
-    private Task<BehaviorTreeStatus> pendingTask;
+    protected Task<BehaviorTreeStatus> pendingTask;
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
     /// <summary>
     /// ValueTask function to invoke for the action.
     /// </summary>
-    private Func<TimeData, ValueTask<BehaviorTreeStatus>> valueTaskFn;
+    protected readonly Func<TimeData, ValueTask<BehaviorTreeStatus>> valueTaskFn;
 
     /// <summary>
     /// Pending value task started by the previous tick.
     /// </summary>
-    private ValueTask<BehaviorTreeStatus> pendingValueTask;
+    protected ValueTask<BehaviorTreeStatus> pendingValueTask;
 
     /// <summary>
     /// Whether a value task is currently pending.
     /// </summary>
-    private bool valueTaskPending;
+    protected bool valueTaskPending;
 #endif
 
     public ActionNode(string name, Func<TimeData, BehaviorTreeStatus> fn)
     {
-        this.name = name;
+        Name = name;
         syncFn = fn ?? throw new ArgumentNullException(nameof(fn));
     }
 
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
     public ActionNode(string name, Func<TimeData, Task<BehaviorTreeStatus>> fn)
     {
-        this.name = name;
+        Name = name;
         taskFn = fn ?? throw new ArgumentNullException(nameof(fn));
     }
 #endif
@@ -66,7 +67,7 @@ public class ActionNode : IBehaviorTreeNode
 #if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
     public ActionNode(string name, Func<TimeData, ValueTask<BehaviorTreeStatus>> fn)
     {
-        this.name = name;
+        Name = name;
         valueTaskFn = fn ?? throw new ArgumentNullException(nameof(fn));
     }
 #endif
@@ -107,10 +108,7 @@ public class ActionNode : IBehaviorTreeNode
 
     private BehaviorTreeStatus TickTaskSync(TimeData time)
     {
-        if (pendingTask == null)
-        {
-            pendingTask = taskFn(time);
-        }
+        pendingTask ??= taskFn(time);
 
         if (!pendingTask.IsCompleted)
         {
@@ -129,10 +127,7 @@ public class ActionNode : IBehaviorTreeNode
 
     private async Task<BehaviorTreeStatus> TickTaskAsync(TimeData time)
     {
-        if (pendingTask == null)
-        {
-            pendingTask = taskFn(time);
-        }
+        pendingTask ??= taskFn(time);
 
         if (!pendingTask.IsCompleted)
         {
@@ -155,7 +150,7 @@ public class ActionNode : IBehaviorTreeNode
     {
         if (!valueTaskPending)
         {
-            pendingValueTask = valueTaskFn(time);
+            pendingValueTask = valueTaskFn.Invoke(time);
             valueTaskPending = true;
         }
 
@@ -178,7 +173,7 @@ public class ActionNode : IBehaviorTreeNode
     {
         if (!valueTaskPending)
         {
-            pendingValueTask = valueTaskFn(time);
+            pendingValueTask = valueTaskFn.Invoke(time);
             valueTaskPending = true;
         }
 

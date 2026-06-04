@@ -1,4 +1,5 @@
 ﻿using System;
+
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
 using System.Threading.Tasks;
 #endif
@@ -8,22 +9,17 @@ namespace BehaviorTree;
 /// <summary>
 /// Decorator node that inverts the success/failure of its child.
 /// </summary>
-public class InverterNode : IParentBehaviorTreeNode
+/// <param name="name">
+/// Name of the node.
+/// </param>
+public class InverterNode(string name) : IParentBehaviorTreeNode
 {
-    /// <summary>
-    /// Name of the node.
-    /// </summary>
-    private string name;
-
     /// <summary>
     /// The child to be inverted.
     /// </summary>
     private IBehaviorTreeNode childNode;
 
-    public InverterNode(string name)
-    {
-        this.name = name;
-    }
+    public string Name { get; } = name;
 
     public BehaviorTreeStatus Tick(TimeData time)
     {

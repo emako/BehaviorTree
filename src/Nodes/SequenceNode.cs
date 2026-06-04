@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
 using System.Threading.Tasks;
 #endif
@@ -11,14 +12,14 @@ namespace BehaviorTree;
 public class SequenceNode(string name) : IParentBehaviorTreeNode
 {
     /// <summary>
-    /// Name of the node.
-    /// </summary>
-    private string name = name;
-
-    /// <summary>
     /// List of child nodes.
     /// </summary>
-    private List<IBehaviorTreeNode> children = []; //todo: this could be optimized as a baked array.
+    protected readonly List<IBehaviorTreeNode> children = []; //todo: this could be optimized as a baked array.
+
+    /// <summary>
+    /// Name of the node.
+    /// </summary>
+    public string Name { get; } = name;
 
     public BehaviorTreeStatus Tick(TimeData time)
     {

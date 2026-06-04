@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+
 #if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
 using System.Threading.Tasks;
 #endif
@@ -8,34 +9,27 @@ namespace BehaviorTree;
 /// <summary>
 /// Runs childs nodes in parallel.
 /// </summary>
-public class ParallelNode : IParentBehaviorTreeNode
+/// <param name="name">
+/// Name of the node.
+/// </param>
+/// <param name="numRequiredToFail">
+/// Number of child failures required to terminate with failure.
+/// </param>
+/// <param name="numRequiredToSucceed">
+/// Number of child successess require to terminate with success.
+/// </param>
+public class ParallelNode(string name, int numRequiredToFail, int numRequiredToSucceed) : IParentBehaviorTreeNode
 {
-    /// <summary>
-    /// Name of the node.
-    /// </summary>
-    private string name;
-
     /// <summary>
     /// List of child nodes.
     /// </summary>
-    private List<IBehaviorTreeNode> children = [];
+    protected readonly List<IBehaviorTreeNode> children = [];
 
-    /// <summary>
-    /// Number of child failures required to terminate with failure.
-    /// </summary>
-    private int numRequiredToFail;
+    public string Name { get; } = name;
 
-    /// <summary>
-    /// Number of child successess require to terminate with success.
-    /// </summary>
-    private int numRequiredToSucceed;
+    public int NumRequiredToFail { get; } = numRequiredToFail;
 
-    public ParallelNode(string name, int numRequiredToFail, int numRequiredToSucceed)
-    {
-        this.name = name;
-        this.numRequiredToFail = numRequiredToFail;
-        this.numRequiredToSucceed = numRequiredToSucceed;
-    }
+    public int NumRequiredToSucceed { get; } = numRequiredToSucceed;
 
     public BehaviorTreeStatus Tick(TimeData time)
     {
@@ -52,12 +46,12 @@ public class ParallelNode : IParentBehaviorTreeNode
             }
         }
 
-        if (numRequiredToSucceed > 0 && numChildrenSuceeded >= numRequiredToSucceed)
+        if (NumRequiredToSucceed > 0 && numChildrenSuceeded >= NumRequiredToSucceed)
         {
             return BehaviorTreeStatus.Success;
         }
 
-        if (numRequiredToFail > 0 && numChildrenFailed >= numRequiredToFail)
+        if (NumRequiredToFail > 0 && numChildrenFailed >= NumRequiredToFail)
         {
             return BehaviorTreeStatus.Failure;
         }
@@ -81,12 +75,12 @@ public class ParallelNode : IParentBehaviorTreeNode
             }
         }
 
-        if (numRequiredToSucceed > 0 && numChildrenSuceeded >= numRequiredToSucceed)
+        if (NumRequiredToSucceed > 0 && numChildrenSuceeded >= NumRequiredToSucceed)
         {
             return BehaviorTreeStatus.Success;
         }
 
-        if (numRequiredToFail > 0 && numChildrenFailed >= numRequiredToFail)
+        if (NumRequiredToFail > 0 && numChildrenFailed >= NumRequiredToFail)
         {
             return BehaviorTreeStatus.Failure;
         }
