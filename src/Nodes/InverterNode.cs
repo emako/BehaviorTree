@@ -1,4 +1,7 @@
 ﻿using System;
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+using System.Threading.Tasks;
+#endif
 
 namespace BehaviorTree;
 
@@ -29,20 +32,20 @@ public class InverterNode : IParentBehaviorTreeNode
             throw new ApplicationException("InverterNode must have a child node!");
         }
 
-        var result = childNode.Tick(time);
-        if (result == BehaviorTreeStatus.Failure)
-        {
-            return BehaviorTreeStatus.Success;
-        }
-        else if (result == BehaviorTreeStatus.Success)
-        {
-            return BehaviorTreeStatus.Failure;
-        }
-        else
-        {
-            return result;
-        }
+        return Invert(childNode.Tick(time));
     }
+
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
+    {
+        if (childNode == null)
+        {
+            throw new ApplicationException("InverterNode must have a child node!");
+        }
+
+        return Invert(await childNode.TickAsync(time).ConfigureAwait(false));
+    }
+#endif
 
     /// <summary>
     /// Add a child to the parent node.
@@ -55,5 +58,20 @@ public class InverterNode : IParentBehaviorTreeNode
         }
 
         childNode = child;
+    }
+
+    private static BehaviorTreeStatus Invert(BehaviorTreeStatus result)
+    {
+        if (result == BehaviorTreeStatus.Failure)
+        {
+            return BehaviorTreeStatus.Success;
+        }
+
+        if (result == BehaviorTreeStatus.Success)
+        {
+            return BehaviorTreeStatus.Failure;
+        }
+
+        return result;
     }
 }

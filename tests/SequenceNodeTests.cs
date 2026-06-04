@@ -2,8 +2,6 @@
 using Moq;
 using Xunit;
 
-namespace tests;
-
 public class SequenceNodeTests
 {
     private SequenceNode testObject;

@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+using System.Threading.Tasks;
+#endif
+
 namespace BehaviorTree;
 
 /// <summary>
@@ -33,6 +37,40 @@ public class BehaviorTreeBuilder
         return this;
     }
 
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    /// <summary>
+    /// Create an action node that returns a task.
+    /// </summary>
+    public BehaviorTreeBuilder Do(string name, Func<TimeData, Task<BehaviorTreeStatus>> fn)
+    {
+        if (parentNodeStack.Count <= 0)
+        {
+            throw new ApplicationException("Can't create an unnested ActionNode, it must be a leaf node.");
+        }
+
+        var actionNode = new ActionNode(name, fn);
+        parentNodeStack.Peek().AddChild(actionNode);
+        return this;
+    }
+#endif
+
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+    /// <summary>
+    /// Create an action node that returns a value task.
+    /// </summary>
+    public BehaviorTreeBuilder DoValue(string name, Func<TimeData, ValueTask<BehaviorTreeStatus>> fn)
+    {
+        if (parentNodeStack.Count <= 0)
+        {
+            throw new ApplicationException("Can't create an unnested ActionNode, it must be a leaf node.");
+        }
+
+        var actionNode = new ActionNode(name, fn);
+        parentNodeStack.Peek().AddChild(actionNode);
+        return this;
+    }
+#endif
+
     /// <summary>
     /// Like an action node... but the function can return true/false and is mapped to success/failure.
     /// </summary>
@@ -40,6 +78,38 @@ public class BehaviorTreeBuilder
     {
         return Do(name, t => fn(t) ? BehaviorTreeStatus.Success : BehaviorTreeStatus.Failure);
     }
+
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    /// <summary>
+    /// Like a condition node, but the predicate returns a task of bool.
+    /// </summary>
+    public BehaviorTreeBuilder Condition(string name, Func<TimeData, Task<bool>> fn)
+    {
+        async Task<BehaviorTreeStatus> Action(TimeData t)
+        {
+            return await fn(t).ConfigureAwait(false)
+                ? BehaviorTreeStatus.Success
+                : BehaviorTreeStatus.Failure;
+        }
+        return Do(name, Action);
+    }
+#endif
+
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+    /// <summary>
+    /// Like a condition node, but the predicate returns a value task of bool.
+    /// </summary>
+    public BehaviorTreeBuilder Condition(string name, Func<TimeData, ValueTask<bool>> fn)
+    {
+        async ValueTask<BehaviorTreeStatus> Action(TimeData t)
+        {
+            return await fn(t).ConfigureAwait(false)
+                ? BehaviorTreeStatus.Success
+                : BehaviorTreeStatus.Failure;
+        }
+        return DoValue(name, Action);
+    }
+#endif
 
     /// <summary>
     /// Create an inverter node that inverts the success/failure of its children.
@@ -110,11 +180,7 @@ public class BehaviorTreeBuilder
     /// </summary>
     public BehaviorTreeBuilder Splice(IBehaviorTreeNode subTree)
     {
-        if (subTree == null)
-        {
-            throw new ArgumentNullException("subTree");
-        }
-
+        _ = subTree ?? throw new ArgumentNullException(nameof(subTree));
         if (parentNodeStack.Count <= 0)
         {
             throw new ApplicationException("Can't splice an unnested sub-tree, there must be a parent-tree.");

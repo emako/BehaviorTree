@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+using System.Threading.Tasks;
+#endif
 
 namespace BehaviorTree;
 
@@ -15,7 +18,7 @@ public class ParallelNode : IParentBehaviorTreeNode
     /// <summary>
     /// List of child nodes.
     /// </summary>
-    private List<IBehaviorTreeNode> children = new List<IBehaviorTreeNode>();
+    private List<IBehaviorTreeNode> children = [];
 
     /// <summary>
     /// Number of child failures required to terminate with failure.
@@ -61,6 +64,36 @@ public class ParallelNode : IParentBehaviorTreeNode
 
         return BehaviorTreeStatus.Running;
     }
+
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
+    {
+        var numChildrenSuceeded = 0;
+        var numChildrenFailed = 0;
+
+        foreach (var child in children)
+        {
+            var childStatus = await child.TickAsync(time).ConfigureAwait(false);
+            switch (childStatus)
+            {
+                case BehaviorTreeStatus.Success: ++numChildrenSuceeded; break;
+                case BehaviorTreeStatus.Failure: ++numChildrenFailed; break;
+            }
+        }
+
+        if (numRequiredToSucceed > 0 && numChildrenSuceeded >= numRequiredToSucceed)
+        {
+            return BehaviorTreeStatus.Success;
+        }
+
+        if (numRequiredToFail > 0 && numChildrenFailed >= numRequiredToFail)
+        {
+            return BehaviorTreeStatus.Failure;
+        }
+
+        return BehaviorTreeStatus.Running;
+    }
+#endif
 
     public void AddChild(IBehaviorTreeNode child)
     {

@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+using System.Threading.Tasks;
+#endif
 
 namespace BehaviorTree;
 
@@ -30,6 +33,22 @@ public class SequenceNode(string name) : IParentBehaviorTreeNode
 
         return BehaviorTreeStatus.Success;
     }
+
+#if NET452_OR_GREATER || NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+    public async Task<BehaviorTreeStatus> TickAsync(TimeData time)
+    {
+        foreach (var child in children)
+        {
+            var childStatus = await child.TickAsync(time).ConfigureAwait(false);
+            if (childStatus != BehaviorTreeStatus.Success)
+            {
+                return childStatus;
+            }
+        }
+
+        return BehaviorTreeStatus.Success;
+    }
+#endif
 
     /// <summary>
     /// Add a child to the sequence.
