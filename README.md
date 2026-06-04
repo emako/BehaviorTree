@@ -1,215 +1,222 @@
-# Fluent-Behaviour-Tree
+# BehaviorTree
 
-C# behaviour tree library with a fluent API.
+C# behavior tree library with a fluent API. Build AI and game logic as composable trees of actions and control nodes, then tick them each frame with elapsed time.
 
-For a background and walk-through please see [the accompanying article](http://www.what-could-possibly-go-wrong.com/fluent-behavior-trees-for-ai-and-game-logic/). 
+Fork and continuation of [fluent-behaviour-tree](https://github.com/codecapers/fluent-behaviour-tree) by Code Capers. For background, see [Fluent behavior trees for AI and game logic](http://www.what-could-possibly-go-wrong.com/fluent-behavior-trees-for-ai-and-game-logic/).
 
-## Understanding Behaviour Trees
+## Features
 
-Here are some resources to help you understand behaviour trees:
+- Fluent `BehaviorTreeBuilder` for readable tree construction
+- Composite nodes: **Sequence**, **Selector**, **Parallel**, **Inverter**
+- Leaf **Action** nodes and boolean **Condition** sugar
+- **Splice** reusable sub-trees into a parent tree
+- `TimeData` passed on every tick for delta-time aware logic
+- Multi-target: .NET Framework 3.5 through .NET 10, plus `netstandard2.0` / `netstandard2.1`
 
-- [Behaviour tree (Wikipedia)](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control))
+## Installation
+
+**NuGet (Package Manager Console):**
+
+```powershell
+Install-Package BehaviorTree
+```
+
+**.NET CLI:**
+
+```bash
+dotnet add package BehaviorTree
+```
+
+**From source:** clone this repository and reference `src/BehaviorTree.csproj`, or build the solution under `src/`.
+
+## Quick start
+
+A tree is built with `BehaviorTreeBuilder` and returned from `Build()`. The root must be a composite node (not a bare `Do`).
+
+```csharp
+using BehaviorTree;
+
+IBehaviorTreeNode tree;
+
+public void Startup()
+{
+    tree = new BehaviorTreeBuilder()
+        .Sequence("my-sequence")
+            .Do("action1", t =>
+            {
+                // Action 1.
+                return BehaviorTreeStatus.Success;
+            })
+            .Do("action2", t =>
+            {
+                // Action 2.
+                return BehaviorTreeStatus.Success;
+            })
+        .End()
+        .Build();
+}
+```
+
+Tick the tree on each update of your game loop:
+
+```csharp
+public void Update(float deltaTime)
+{
+    tree.Tick(new TimeData(deltaTime));
+}
+```
+
+`TimeData` exposes `DeltaTime` (seconds since last tick).
+
+## Behavior tree status
+
+Nodes return one of:
+
+| Status | Meaning |
+|--------|---------|
+| `Success` | The node finished and succeeded. |
+| `Failure` | The node finished and failed. |
+| `Running` | The node is still in progress; the tree will resume here on the next tick. |
+
+## Node types
+
+### Action (leaf)
+
+Use `Do` for leaf actions. Query entities or the world, then return a status.
+
+```csharp
+.Do("do-something", t =>
+{
+    // ... do something ...
+    return BehaviorTreeStatus.Success;
+})
+```
+
+`Do` must be nested inside a parent composite node.
+
+### Sequence
+
+Runs children in order. Fails on the first child that returns `Failure`. Advances when the current child returns `Success`. Stays on the current child while it returns `Running`. Succeeds when all children succeed.
+
+```csharp
+.Sequence("my-sequence")
+    .Do("action1", t => BehaviorTreeStatus.Success)
+    .Do("action2", t => BehaviorTreeStatus.Success)
+.End()
+```
+
+### Parallel
+
+Runs all children each tick. Terminates when enough children have failed or succeeded (thresholds are configurable).
+
+```csharp
+int numRequiredToFail = 2;
+int numRequiredToSucceed = 2;
+
+.Parallel("my-parallel", numRequiredToFail, numRequiredToSucceed)
+    .Do("action1", t => BehaviorTreeStatus.Running)
+    .Do("action2", t => BehaviorTreeStatus.Running)
+.End()
+```
+
+### Selector
+
+Runs children in order until one succeeds. Fails if every child fails. Stays on a child while it returns `Running`.
+
+```csharp
+.Selector("my-selector")
+    .Do("action1", t => BehaviorTreeStatus.Failure)  // try next
+    .Do("action2", t => BehaviorTreeStatus.Success) // stop here
+    .Do("action3", t => BehaviorTreeStatus.Success) // not reached
+.End()
+```
+
+### Condition
+
+Syntactic sugar over `Do`: a `bool` is mapped to `Success` or `Failure`. Often used with `Selector`.
+
+```csharp
+.Selector("my-selector")
+    .Condition("condition1", t => SomeBooleanCondition())
+    .Do("action1", t => SomeAction())
+.End()
+```
+
+### Inverter
+
+Inverts `Success` / `Failure` of its single child. Keeps `Running` while the child is `Running`.
+
+```csharp
+.Inverter("inverter1")
+    .Do("action1", t => BehaviorTreeStatus.Success) // becomes Failure
+.End()
+
+.Inverter("inverter2")
+    .Do("action1", t => BehaviorTreeStatus.Failure) // becomes Success
+.End()
+```
+
+`Inverter` accepts only one child.
+
+## Nesting
+
+Trees can nest to any depth:
+
+```csharp
+.Selector("parent")
+    .Sequence("child-1")
+        .Parallel("grand-child", 1, 1)
+            .Do("leaf", t => BehaviorTreeStatus.Success)
+        .End()
+    .End()
+    .Sequence("child-2")
+        .Do("leaf", t => BehaviorTreeStatus.Success)
+    .End()
+.End()
+```
+
+## Splicing sub-trees
+
+Build reusable pieces separately and attach them with `Splice`:
+
+```csharp
+private static IBehaviorTreeNode CreateSubTree()
+{
+    return new BehaviorTreeBuilder()
+        .Sequence("my-sub-tree")
+            .Do("action1", t => BehaviorTreeStatus.Success)
+            .Do("action2", t => BehaviorTreeStatus.Success)
+        .End()
+        .Build();
+}
+
+public void Startup()
+{
+    tree = new BehaviorTreeBuilder()
+        .Sequence("my-parent-sequence")
+            .Splice(CreateSubTree())
+            .Splice(CreateSubTree())
+        .End()
+        .Build();
+}
+```
+
+## Building and tests
+
+From the repository root:
+
+```bash
+dotnet build src/BehaviorTree.csproj
+dotnet test tests/BehaviorTree.Tests.csproj
+```
+
+## Learn more
+
+- [Behavior tree (Wikipedia)](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control))
 - [Behavior trees for AI: How they work](http://www.gamasutra.com/blogs/ChrisSimpson/20140717/221339/Behavior_trees_for_AI_How_they_work.php)
 - [Understanding Behaviour Trees](http://aigamedev.com/open/article/bt-overview/)
 - [Introduction and implementation of Behaviour Trees](http://guineashots.com/2014/07/25/an-introduction-to-behavior-trees-part-1/)
 
-## Installation
+## License
 
-In the Visual Studio [Package Manager Console](http://docs.nuget.org/consume/package-manager-console):
-
-    PM> Install-Package FluentBehaviourTree
-
-Or clone or download the code from [the github repository](https://github.com/codecapers/fluent-behaviour-tree).
-
-## Creating a Behaviour Tree
-
-A behaviour tree is created through *BehaviourTreeBuilder*. The tree is returned when the *Build* function is called.
-
-    using FluentBehaviourTree;
-
-    ...
-
-    IBehaviourTreeNode tree;
-
-    public void Startup()
-    {
-        var builder = new BehaviourTreeBuilder();
-        this.tree = builder
-            .Sequence("my-sequence")
-                .Do("action1",  t => 
-                {
-                    // Action 1.
-                    return BehaviourTreeStatus.Success;
-                })
-                .Do("action2", t => 
-                {
-                    // Action 2.
-                    return BehaviourTreeStatus.Success;
-                })
-            .End()
-            .Build();
-    }
-
-*Tick* the behaviour tree on each *update* of your *game loop*:
-
-    public void Update(float deltaTime)
-    {
-        this.tree.Tick(new TimeData(deltaTime));
-    }
-
-## Behaviour Tree Status
-
-Behaviour tree nodes return the following status codes:
-
-* *Success*: The node has finished what it was doing and succeeded.
-* *Failure*: The node has finished, but failed.
-* *Running*: The node is still working on something. 
-
-## Node Types
-
-### Action / Leaf-Node
-
-Call the *Do* function to create an action node at the leaves of the behavior tree. 
-
-    .Do("do-something", t => 
-    {
-        // ... do something ...
-        // ... query the entity, query the environment then take some action ...
-        return BehaviourTreeStatus.Success;
-    }); 
-
-The return value defines the status of the node. Return *Success*, *Failure* or *Running*.
-
-### Sequence
-
-Runs each child node in sequence. Fails for the first child node that *fails*. Moves to the next child when the current running child *succeeds*. Stays on the current child node while it returns *running*. Succeeds when all child nodes have succeeded.
-
-    .Sequence("my-sequence")
-        .Do("action1", t => 
-        {
-            // Sequential action 1.
-            return BehaviourTreeStatus.Success; // Run this.
-        }) 
-        .Do("action2", t => 
-        {
-            // Sequential action 2.
-            return BehaviourTreeStatus.Success; // Then run this.
-        })
-    .End()
-
-### Parallel
-
-Runs all child nodes in parallel. Continues to run until a required number of child nodes have either *failed* or *succeeded*.
-
-    int numRequiredToFail = 2;
-    int numRequiredToSucceed = 2;
-
-    .Parallel("my-parallel", numRequiredToFail, numRequiredToSucceed)
-        .Do("action1", t => 
-        {
-            // Parallel action 1.
-            return BehaviourTreeStatus.Running;
-        })
-        .Do("action2", t => 
-        {
-            // Parallel action 2.
-            return BehaviourTreeStatus.Running;
-        })        
-    .End()
-
-### Selector
-
-Runs child nodes in sequence until it finds one that *succeeds*. Succeeds when it finds the first child that *succeeds*. For child nodes that *fail* it moves forward to the next child node. While a child is *running* it stays on that child node without moving forward. 
-
-    .Selector("my-selector")
-        .Do("action1", t => 
-        {
-            // Action 1.
-            return BehaviourTreeStatus.Failure; // Fail, move onto next child.
-        }); 
-        .Do("action2", t => 
-        {
-            // Action 2.
-            return BehaviourTreeStatus.Success; // Success, stop here.
-        })        
-        .Do("action3", t => 
-        {
-            // Action 3.
-            return BehaviourTreeStatus.Success; // Doesn't get this far. 
-        })        
-    .End()
-
-
-### Condition
-
-The condition function is syntactic sugar for the *Do* function. It allows return of a boolean value that is then converted to a *success* or *failure*. It is intended to be used with *Selector*.
-
-    .Selector("my-selector")
-        .Condition("condition1", t => SomeBooleanCondition())    // Predicate that returns *true* or *false*. 
-        .Do("action1", t => SomeAction())                    // Action to run if the predicate evaluates to *true*. 
-    .End()
-
-
-### Inverter
-
-Inverts the *success* or *failure* of the child node. Continues running while the child node is *running*.
-
-    .Inverter("inverter1")
-        .Do("action1", t => BehaviourTreeStatus.Success) // *Success* will be inverted to *failure*.
-    .End() 
-
-
-    .Inverter("inverter1")
-        .Do("action1", t => BehaviourTreeStatus.Failure) // *Failure* will be inverted to *success*.
-    .End() 
-
-## Nesting Behaviour Trees
-
-Behaviour trees can be nested to any depth, for example:
-
-    .Selector("parent")
-        .Sequence("child-1")
-            ...
-            .Parallel("grand-child")
-                ...
-            .End()
-            ...
-        .End()
-        .Sequence("child-2")
-            ...
-        .End()
-    .End()
-
-## Splicing a Sub-tree
-
-Separately created sub-trees can be spliced into parent trees. This makes it easy to build behaviour trees from reusable components.
-
-    private IBehaviourTreeNode CreateSubTree()
-    {
-        var builder = new BehaviourTreeBuilder();
-        return builder
-            .Sequence("my-sub-tree")
-                .Do("action1", t => 
-                {
-                    // Action 1.
-                    return BehaviourTreeStatus.Success;
-                })
-                .Do("action2", t => 
-                {
-                    // Action 2.
-                    return BehaviourTreeStatus.Success;
-                }); 
-            .End()
-            .Build();
-    }
-
-    public void Startup()
-    {
-        var builder = new BehaviourTreeBuilder();
-        this.tree = builder
-            .Sequence("my-parent-sequence")
-                .Splice(CreateSubTree()) // Splice the child tree in.
-                .Splice(CreateSubTree()) // Splice again.
-            .End()
-            .Build();
-    }
+MIT — see [LICENSE](LICENSE). Copyright © 2015 Code Capers; copyright © 2026 ema.
