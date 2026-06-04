@@ -11,6 +11,8 @@ Fork and continuation of [fluent-behaviour-tree](https://github.com/codecapers/f
 - Leaf **Action** nodes and boolean **Condition** sugar
 - **Splice** reusable sub-trees into a parent tree
 - `TimeData` passed on every tick for delta-time aware logic
+- **Async actions** via `Task` and `ValueTask` on supported target frameworks
+- Full **XML documentation** shipped with the NuGet package
 - Multi-target: .NET Framework 3.5 through .NET 10, plus `netstandard2.0` / `netstandard2.1`
 
 ## Installation
@@ -82,7 +84,7 @@ Nodes return one of:
 
 ### Action (leaf)
 
-Use `Do` for leaf actions. Query entities or the world, then return a status.
+Use `Do` for synchronous leaf actions. Query entities or the world, then return a status.
 
 ```csharp
 .Do("do-something", t =>
@@ -158,6 +160,51 @@ Inverts `Success` / `Failure` of its single child. Keeps `Running` while the chi
 
 `Inverter` accepts only one child.
 
+## Async actions
+
+On supported target frameworks, leaf actions can return `Task<BehaviorTreeStatus>` or `ValueTask<BehaviorTreeStatus>`. The action is invoked once; the node stays `Running` until the task completes.
+
+Use `TickAsync` to drive the tree asynchronously:
+
+```csharp
+public async Task UpdateAsync(float deltaTime)
+{
+    var status = await tree.TickAsync(new TimeData(deltaTime));
+}
+```
+
+**Task-based actions** (`Do` overload, `Condition` with `Task<bool>`):
+
+```csharp
+await new BehaviorTreeBuilder()
+    .Sequence("async-sequence")
+        .Do("fetch-data", async t =>
+        {
+            await LoadDataAsync();
+            return BehaviorTreeStatus.Success;
+        })
+        .Condition("has-target", async t => await HasTargetAsync())
+    .End()
+    .Build()
+    .TickAsync(new TimeData(deltaTime));
+```
+
+**ValueTask-based actions** (`DoValue`, `Condition` with `ValueTask<bool>` — `netstandard2.1+` and .NET 5+ only):
+
+```csharp
+.DoValue("fast-path", t => new ValueTask<BehaviorTreeStatus>(BehaviorTreeStatus.Success))
+```
+
+Synchronous `Tick()` also works on async nodes (it blocks until a pending task completes), but prefer `TickAsync()` in async code.
+
+### API availability by target framework
+
+| API | Available on |
+|-----|--------------|
+| `Tick`, synchronous `Do` / `Condition` | All targets (`net35` … `net10`, `netstandard2.0/2.1`) |
+| `TickAsync`, `Do` with `Task`, `Condition` with `Task<bool>` | `net452+`, `netstandard2.0+`, .NET 5+ |
+| `DoValue`, `Condition` with `ValueTask<bool>` | `netstandard2.1+`, .NET 5+ |
+
 ## Nesting
 
 Trees can nest to any depth:
@@ -219,4 +266,4 @@ dotnet test tests/BehaviorTree.Tests.csproj
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Copyright © 2015 Code Capers; copyright © 2026 ema.
+MIT — see [LICENSE](LICENSE). Copyright © 2015 Code Capers; copyright © 2015–2026 ema.
