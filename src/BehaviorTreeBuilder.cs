@@ -16,7 +16,7 @@ public class BehaviorTreeBuilder
     /// <summary>
     /// Stack node nodes that we are build via the fluent API.
     /// </summary>
-    private Stack<IParentBehaviorTreeNode> parentNodeStack = new();
+    private readonly Stack<IParentBehaviorTreeNode> parentNodeStack = new();
 
     /// <summary>
     /// Create an action node.

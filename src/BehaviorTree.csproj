@@ -11,13 +11,32 @@
         <PackageId>BehaviorTree</PackageId>
         <Authors>ema</Authors>
         <Copyright>Copyright © 2015-2026</Copyright>
-        <Version>0.0.4</Version>
+        <Version>0.0.4.0</Version>
         <AssemblyVersion>0.0.4.0</AssemblyVersion>
         <FileVersion>0.0.4.0</FileVersion>
+        <Authors>ema</Authors>
+        <Company>ema</Company>
         <Description>C# behavior tree library with a fluent API</Description>
         <PackageProjectUrl>https://github.com/emako/BehaviorTree</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/emako/BehaviorTree</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/emako/BehaviorTree</RepositoryUrl>
         <PackageTags>C# fluent api behavior behaviour tree</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <IncludeSymbols>true</IncludeSymbols>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeDocumentationFile>true</IncludeDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <PackageIcon>logo.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="" />
+        <None Include="..\branding\logo.png" Pack="true" PackagePath="" />
+    </ItemGroup>
 
 </Project>
